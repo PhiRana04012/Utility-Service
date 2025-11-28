@@ -6,7 +6,50 @@ const logger = require('../config/logger');
 
 const router = express.Router();
 
-// POST /issues
+/**
+ * @swagger
+ * /issues:
+ *   post:
+ *     summary: Создать новую заявку ЖКХ
+ *     tags: [Issues]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateIssueRequest'
+ *           example:
+ *             user_id: 123
+ *             issue_type_id: 1
+ *             description: "Протечка в ванной комнате"
+ *             address: "ул. Ленина, д. 10, кв. 5"
+ *     responses:
+ *       201:
+ *         description: Заявка успешно создана
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Issue'
+ *             example:
+ *               id: 1
+ *               user_id: 123
+ *               issue_type_id: 1
+ *               description: "Протечка в ванной комнате"
+ *               address: "ул. Ленина, д. 10, кв. 5"
+ *               status: "new"
+ *               cost: 1500.00
+ *               currency: "RUB"
+ *               assignee_id: null
+ *               service_name: "Сантехнические работы"
+ *               service_price: 1500.00
+ *               service_currency: "RUB"
+ *               created_at: "2025-11-28T10:00:00.000Z"
+ *               updated_at: "2025-11-28T10:00:00.000Z"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ */
 router.post('/', async (req, res, next) => {
   try {
     await createIssueSchema.validateAsync(req.body);
@@ -37,7 +80,61 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// GET /issues
+/**
+ * @swagger
+ * /issues:
+ *   get:
+ *     summary: Получить список заявок
+ *     tags: [Issues]
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Фильтр по ID пользователя
+ *         example: 123
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [new, in_progress, completed, cancelled]
+ *         description: Фильтр по статусу заявки
+ *         example: new
+ *       - in: query
+ *         name: assignee_id
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Фильтр по ID исполнителя
+ *         example: 456
+ *     responses:
+ *       200:
+ *         description: Список заявок
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Issue'
+ *             example:
+ *               - id: 1
+ *                 user_id: 123
+ *                 issue_type_id: 1
+ *                 description: "Протечка в ванной комнате"
+ *                 address: "ул. Ленина, д. 10, кв. 5"
+ *                 status: "new"
+ *                 cost: 1500.00
+ *                 currency: "RUB"
+ *                 assignee_id: null
+ *                 service_name: "Сантехнические работы"
+ *                 service_price: 1500.00
+ *                 service_currency: "RUB"
+ *                 created_at: "2025-11-28T10:00:00.000Z"
+ *                 updated_at: "2025-11-28T10:00:00.000Z"
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ */
 router.get('/', async (req, res, next) => {
   try {
     const filters = {};
@@ -52,7 +149,59 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// PUT /issues/:id
+/**
+ * @swagger
+ * /issues/{id}:
+ *   put:
+ *     summary: Обновить статус заявки
+ *     tags: [Issues]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: ID заявки
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateIssueRequest'
+ *           example:
+ *             status: "in_progress"
+ *             assignee_id: 456
+ *     responses:
+ *       200:
+ *         description: Заявка успешно обновлена
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Issue'
+ *             example:
+ *               id: 1
+ *               user_id: 123
+ *               issue_type_id: 1
+ *               description: "Протечка в ванной комнате"
+ *               address: "ул. Ленина, д. 10, кв. 5"
+ *               status: "in_progress"
+ *               cost: 1500.00
+ *               currency: "RUB"
+ *               assignee_id: 456
+ *               service_name: "Сантехнические работы"
+ *               service_price: 1500.00
+ *               service_currency: "RUB"
+ *               created_at: "2025-11-28T10:00:00.000Z"
+ *               updated_at: "2025-11-28T10:30:00.000Z"
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ */
 router.put('/:id', async (req, res, next) => {
   try {
     const id = Number(req.params.id);
