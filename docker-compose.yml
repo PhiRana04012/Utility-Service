@@ -1,0 +1,78 @@
+services:
+  # База данных MySQL
+  db:
+    image: mysql:8.0
+    container_name: utility-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: utility_db
+      MYSQL_USER: utility_user
+      MYSQL_PASSWORD: utility_password
+    ports:
+      - "3307:3306"  # Внешний порт 3307, внутренний 3306 
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - utility-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend сервис
+  backend:
+    build:
+      context: ./utility-service backend
+      dockerfile: Dockerfile
+    container_name: utility-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=utility_user
+      - DB_PASSWORD=utility_password
+      - DB_NAME=utility_db
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - utility-network
+    restart: unless-stopped
+    # Упрощенный healthcheck - просто проверяем, что процесс запущен
+    # Можно раскомментировать для более строгой проверки
+    # healthcheck:
+    #   test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:3001/issues"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 90s
+
+  # Frontend сервис
+  frontend:
+    build:
+      context: ./utility-service-frontend
+      dockerfile: Dockerfile
+    container_name: utility-frontend
+    ports:
+      - "8080:80"  # Внешний порт 8080, внутренний 80  
+    environment:
+      - API_BACKEND_URL=http://backend:3001
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - utility-network
+    restart: unless-stopped
+
+networks:
+  utility-network:
+    driver: bridge
+
+volumes:
+  db_data:
+
